@@ -12,6 +12,7 @@ type Sprite struct {
 	shdr *Shader
 	fliph bool
 	flipv bool
+	rotOrigin Vector2
 }
 
 func RegisterSpriteType(state *lua.LState) {
@@ -81,13 +82,29 @@ var spriteMembers = map[string]lua.LGFunction {
 		}
 		colR := raylib.Color{uint8(col.RawGetInt(1).(lua.LNumber)), uint8(col.RawGetInt(2).(lua.LNumber)), uint8(col.RawGetInt(3).(lua.LNumber)), uint8(col.RawGetInt(4).(lua.LNumber))}
 		
-		raylib.DrawTexturePro(this.Tex, srcR, posR, Vector2{0, 0}, float32(rot), colR)
+		raylib.DrawTexturePro(this.Tex, srcR, posR, this.rotOrigin, float32(rot), colR)
 		//TODO: Draw functionality
 		
 		if this.shdr != nil {
 			raylib.EndShaderMode()
 		}
 		return 0
+	},
+	"rot_origin": func(L *lua.LState) int {
+		this := checkSprite(L)
+		if this == nil {
+			return 0
+		}
+		if L.GetTop() == 2 {
+			t := L.CheckTable(2)
+			x := t.RawGetInt(1).(lua.LNumber)
+			y := t.RawGetInt(2).(lua.LNumber)
+			this.rotOrigin = Vector2{float32(x), float32(y)}
+			return 0
+		}
+		L.Push(lua.LNumber(this.rotOrigin.X))
+		L.Push(lua.LNumber(this.rotOrigin.Y))
+		return 1
 	},
 	"width": func(L *lua.LState) int {
 		this := checkSprite(L)

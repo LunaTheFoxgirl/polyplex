@@ -30,11 +30,17 @@ func (r *ResourceManager) LoadSprite(L *lua.LState, name string) *Sprite {
 }
 
 func (r *ResourceManager) LoadSound(L *lua.LState, stype SoundType, name string) *aSound {
-	if int(stype) > 3 {
+	fmt.Println("Going to load",r.BaseDirectory+"audio/"+name, "as", stype)
+	if int(stype) > 2 {
 		return nil
 	}
-	af := raylib.LoadSound(r.BaseDirectory+name)
-	return NewSound(L, stype, af)
+	if stype == 0 {
+		af := raylib.LoadSound(r.BaseDirectory+"audio/"+name)
+		return NewSound(L, stype, af)
+	} else {
+		af := raylib.LoadMusicStream(r.BaseDirectory+"audio/"+name)
+		return NewSound(L, stype, af)
+	}
 }
 
 func (r *ResourceManager) LoadShader(L *lua.LState, name string) *Shader {

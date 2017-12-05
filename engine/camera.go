@@ -88,7 +88,7 @@ var cameraMembers = map[string]lua.LGFunction {
 	},
 	"origin": func(state *lua.LState) int {
 		this := checkCamera(state)
-		if state.GetTop() >= 2 {
+		if state.GetTop() == 3 {
 			x := state.CheckNumber(2)
 			y := state.CheckNumber(3)
 			this.Origin = Vector2{float32(x), float32(y)}

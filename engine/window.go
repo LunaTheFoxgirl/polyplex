@@ -76,6 +76,7 @@ func startGame(L *lua.LState) int {
 		return 0
 	}
 	raylib.InitWindow(this.Width, this.Height, this.Title)
+	raylib.InitAudioDevice()
 	raylib.ShowLogo()
 	this.Init(L)
 	for !raylib.WindowShouldClose() {
@@ -93,6 +94,7 @@ func startGame(L *lua.LState) int {
 		}
 		raylib.EndDrawing()
 	}
+	raylib.CloseAudioDevice()
 	err := L.CallByParam(lua.P{	Fn: L.GetGlobal("game_cleanup"), NRet: 0, Protect: true})
 	if err != nil {
 		fmt.Println("[Polyplex:raylib:WARNING]", "game_cleanup is not defined!\n\nGame cleanup is important!")
@@ -112,15 +114,6 @@ func setResizable(state *lua.LState) int {
 	return 0
 }
 
-func getWidth(state *lua.LState) int {
-	this := checkWindow(state)
-	if this == nil {
-		return 0
-	}
-	state.Push(lua.LNumber(this.Width))
-	return 1
-}
-
 func getPosition(state *lua.LState) int {
 	this := checkWindow(state)
 	if this == nil {
@@ -132,12 +125,24 @@ func getPosition(state *lua.LState) int {
 	return 2
 }
 
+func getWidth(state *lua.LState) int {
+	this := checkWindow(state)
+	if this == nil {
+		return 0
+	}
+	i := raylib.GetGameWindowInfo()
+	this.Width = int32(i.Size.CanvasSize.X)
+	state.Push(lua.LNumber(this.Width))
+	return 1
+}
 
 func getHeight(state *lua.LState) int {
 	this := checkWindow(state)
 	if this == nil {
 		return 0
 	}
+	i := raylib.GetGameWindowInfo()
+	this.Height = int32(i.Size.CanvasSize.Y)
 	state.Push(lua.LNumber(this.Height))
 	return 1
 }
@@ -150,6 +155,7 @@ func getSetTitle(state *lua.LState) int {
 	
 	if state.GetTop() == 2 {
 		this.Title = state.CheckString(2)
+		raylib.SetWindowTitle(this.Title)
 		return 0
 	}
 	state.Push(lua.LString(this.Title))
@@ -172,4 +178,14 @@ var windowMembers = map[string]lua.LGFunction {
 	"position": getPosition,
 	"title": getSetTitle,
 	"target_fps": targetFPS,
+	"show_cursor": func (state *lua.LState) int {
+		if state.GetTop() == 2 {
+			if bool(state.CheckBool(2)) == false {
+				raylib.HideCursor()
+				return 0
+			}
+			raylib.ShowCursor()
+		}
+		return 0
+	},
 }

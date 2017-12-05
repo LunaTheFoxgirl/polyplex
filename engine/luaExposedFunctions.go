@@ -4,6 +4,7 @@ import (
 	"github.com/yuin/gopher-lua"
 	"github.com/Member1221/raylib-go/raylib"
 	"fmt"
+	"time"
 )
 
 func ModuleCore(L *lua.LState) int {
@@ -112,6 +113,11 @@ func ModuleInput(L *lua.LState) int {
 	    	L.Push(lua.LNumber(pos.Y))
 	    	return 2
 	    },
+	    "mouse_scroll": func(L *lua.LState) int {
+			pos := raylib.GetMouseWheelMove()
+	    	L.Push(lua.LNumber(pos))
+	    	return 1
+	    },
 	}
 	mod := L.SetFuncs(L.NewTable(), exports)
 	// TEXT KEYS
@@ -217,6 +223,14 @@ func ModuleTranslation(L *lua.LState) int {
 
 func ModuleUtilities(L *lua.LState) int {
 	exports := map[string]lua.LGFunction{
+		"measure_string": func(L *lua.LState) int {
+			t := string(L.CheckString(1))
+	    	s := int32(L.CheckNumber(2))
+			w := raylib.MeasureText(t, s)
+			L.Push(lua.LNumber(s))
+			L.Push(lua.LNumber(w))
+			return 2
+		},
 	    "draw_string": func(L *lua.LState) int {
 	    	if L.GetTop() < 2 {
 	    		return 0
@@ -252,8 +266,47 @@ func ModuleUtilities(L *lua.LState) int {
 	    	raylib.DrawFPS(int32(x.(lua.LNumber)), int32(y.(lua.LNumber)))
 	    	return 1
 	    },
+	    "draw_debug_sq": func(L *lua.LState) int {
+	    	if L.GetTop() != 2 {
+	    		return 0
+	    	}
+	    	p := L.CheckTable(1)
+	    	x := int32(p.RawGetInt(1).(lua.LNumber))
+	    	y := int32(p.RawGetInt(2).(lua.LNumber))
+	    	w := int32(p.RawGetInt(3).(lua.LNumber))
+	    	h := int32(p.RawGetInt(4).(lua.LNumber))
+	    	c := L.CheckTable(2)
+	    	r := uint8(c.RawGetInt(1).(lua.LNumber))
+	    	g := uint8(c.RawGetInt(2).(lua.LNumber))
+	    	b := uint8(c.RawGetInt(3).(lua.LNumber))
+	    	a := uint8(c.RawGetInt(4).(lua.LNumber))
+	    	raylib.DrawRectangleLines(x, y, w, h, raylib.Color{r,g,b,a})
+	    	return 0
+	    },
+	    "set_raylib_logging": func(L *lua.LState) int {
+	    	raylib.SetLogging(int(L.CheckNumber(1)))
+	    	raylib.SetLoggingGo(int(L.CheckNumber(1)))
+	    	return 0
+	    },
+		"get_time_ms": func(L *lua.LState) int {
+			L.Push(lua.LNumber(time.Now().UnixNano() / int64(time.Millisecond)))
+	    	return 1
+	    },
+		"master_volume": func(L *lua.LState) int {
+			if L.GetTop() != 1 {
+	    		return 0
+			}
+	    	v := L.CheckNumber(1)
+	    	raylib.SetMasterVolume(float32(v))
+	    	return 1
+	    },
 	}
 	mod := L.SetFuncs(L.NewTable(), exports)
+	L.SetField(mod, "log_info", lua.LNumber(raylib.LogInfo))
+	L.SetField(mod, "log_warning", lua.LNumber(raylib.LogWarning))
+	L.SetField(mod, "log_error", lua.LNumber(raylib.LogError))
+	L.SetField(mod, "log_debug", lua.LNumber(raylib.LogDebug))
+	
 	L.Push(mod)
 	return 1
 }
@@ -283,7 +336,7 @@ func ModuleResources(L *lua.LState) int {
 	    	return 1
 	    },
 	    "load_sound": func(L *lua.LState) int {
-	    	if L.GetTop() != 1 {
+	    	if L.GetTop() != 2 {
 	    		return 0
 	    	}
 	    	t := L.CheckNumber(1)
@@ -308,9 +361,8 @@ func ModuleResources(L *lua.LState) int {
 	    },
 	}
 	mod := L.SetFuncs(L.NewTable(), exports)
-	L.SetField(mod, "type_wave", lua.LNumber(raylib.KeyF10))
-	L.SetField(mod, "type_sound", lua.LNumber(raylib.KeyF11))
-	L.SetField(mod, "type_music", lua.LNumber(raylib.KeyF12))
+	L.SetField(mod, "type_sound", lua.LNumber(0))
+	L.SetField(mod, "type_music", lua.LNumber(1))
 	L.Push(mod)
 	return 1
 }

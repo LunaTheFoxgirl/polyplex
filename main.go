@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/yuin/gopher-lua"
 	"bitbucket.org/Member1221/ldjam40/engine"
+	//"github.com/Member1221/raylib-go/raylib"
 	"os"
 	"path/filepath"
 )
@@ -87,6 +88,7 @@ end`)
     if err != nil {
         panic(err)
     }
+    
     exPath := filepath.Dir(ex)
     
 	fPath := exPath+"/"+engine.CONTENT.BaseDirectory+"code/?.lua;"

@@ -9,14 +9,12 @@ import (
 type SoundType int32
 
 const (
-	Wave = SoundType(0)
-	Sound = SoundType(1)
-	Music = SoundType(2)
+	Sound = SoundType(0)
+	Music = SoundType(1)
 )
 
 type aSound struct {
 	Type SoundType
-	Wave raylib.Wave
 	Sound raylib.Sound
 	Music raylib.Music
 }
@@ -34,11 +32,9 @@ func RegisterSoundType(state *lua.LState) {
 func NewSound(L *lua.LState, t SoundType, s interface{}) *aSound {
 	snd := &aSound{ Type:t }
 	ud := L.NewUserData()
-	ud.Value = snd
 	
-	if t == Wave {
-		snd.Wave = s.(raylib.Wave)
-	} else if t == Sound {
+		
+	if t == Sound {
 		snd.Sound = s.(raylib.Sound)
 	} else if t == Music {
 		snd.Music = s.(raylib.Music)
@@ -46,6 +42,8 @@ func NewSound(L *lua.LState, t SoundType, s interface{}) *aSound {
 		// Something REALLY fucked up.
 		return nil
 	}
+	
+	ud.Value = snd
 	
 	L.SetMetatable(ud, L.GetTypeMetatable("sound"))
 	L.Push(ud)
@@ -68,10 +66,6 @@ var soundMembers = map[string]lua.LGFunction {
 			return 0
 		}
 		
-		if t.Type == Wave {
-			return 0
-		}
-		
 		if t.Type == Music {
 			raylib.PlayMusicStream(t.Music)
 			return 0
@@ -90,10 +84,6 @@ var soundMembers = map[string]lua.LGFunction {
 			return 0
 		}
 		
-		if t.Type == Wave {
-			return 0
-		}
-		
 		if t.Type == Music {
 			raylib.StopMusicStream(t.Music)
 			return 0
@@ -104,5 +94,79 @@ var soundMembers = map[string]lua.LGFunction {
 			return 0
 		}
 		return 0
+	},
+	"pause": func (L *lua.LState) int {
+		t := checkSound(L)
+		if t == nil {
+			return 0
+		}
+		
+		if t.Type == Music {
+			raylib.PauseMusicStream(t.Music)
+			return 0
+		}
+		
+		if t.Type == Sound {
+			raylib.PauseSound(t.Sound)
+			return 0
+		}
+		return 0
+	},
+	"pitch": func (L *lua.LState) int {
+		t := checkSound(L)
+		if t == nil {
+			return 0
+		}
+		if L.GetTop() == 2 {
+			pitch := float32(L.CheckNumber(2))
+			if t.Type == Music {
+				raylib.SetMusicPitch(t.Music, pitch)
+			} else if t.Type == Sound {
+				raylib.SetSoundPitch(t.Sound, pitch)
+			}
+		}
+		return 0
+	},
+	"volume": func (L *lua.LState) int {
+		t := checkSound(L)
+		if t == nil {
+			return 0
+		}
+		if L.GetTop() == 2 {
+			pitch := float32(L.CheckNumber(2))
+			if t.Type == Music {
+				raylib.SetMusicVolume(t.Music, pitch)
+			} else if t.Type == Sound {
+				raylib.SetSoundVolume(t.Sound, pitch)
+			}
+		}
+		return 0
+	},
+	"loop_mus": func (L *lua.LState) int {
+		t := checkSound(L)
+		if t == nil {
+			return 0
+		}
+		if L.GetTop() == 2 {
+			count := float32(L.CheckNumber(2))
+			if t.Type == Music {
+				raylib.SetMusicLoopCount(t.Music, count)
+			}
+		}
+		return 0
+	},
+	"is_playing": func (L *lua.LState) int {
+		t := checkSound(L)
+		if t == nil {
+			return 0
+		}
+		playing := false
+		if t.Type == Music {
+				playing = raylib.IsMusicPlaying(t.Music)
+		} else if t.Type == Sound {
+				playing = raylib.IsSoundPlaying(t.Sound)
+		}
+		L.Push(lua.LBool(playing))
+		return 1
 	},
 }
